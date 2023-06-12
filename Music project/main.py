@@ -7,15 +7,15 @@ from PyQt5.QtCore import QUrl, QTimer
 
 # Initial function for validating the user
 def authenticate(username, password):
-    # Compare the entered credentials to external file
+    # Compare the entered credentials to the pairs in the file
     with open("credentials.txt", "r") as file:
-        valid_username = file.readline().strip()
-        valid_password = file.readline().strip()
-
-    if username == valid_username and password == valid_password:
-        return True
-    else:
-        return False
+        for line in file:
+            line = line.strip()
+            if line:
+                valid_username, valid_password = line.split(":")
+                if username == valid_username and password == valid_password:
+                    return True
+    return False
 
 # Function designed to choose a song randomly from a folder
 def select_song():
@@ -89,13 +89,16 @@ def login():
 
 # Function to handle guess button click event
 def guess():
+    global selected_song  # Declare selected_song as a global variable
+
     # Retrieve the entered guess for song name and artist
     song_guess = song_guess_input.text()
     artist_guess = artist_guess_input.text()
 
     # Retrieve the correct song name and artist from the selected song
-    song_name = " ".join(selected_song.split("_")[2:]).replace(".mp3", "")
-    artist_name = selected_song.split("_")[1]
+    song_info = selected_song.replace(".mp3", "").split("_")
+    artist_name = song_info[1] if len(song_info) >= 2 else ""
+    song_name = " ".join(song_info[2:])
 
     # Compare the user's guesses with the correct answers
     if song_guess.lower() == song_name.lower() and artist_guess.lower() == artist_name.lower():
@@ -196,66 +199,66 @@ login_button = QPushButton(window)
 login_button.setText("Login")
 login_button.clicked.connect(login)
 
-# Create artist initials label
-artist_initials_label = QLabel(window)
-artist_initials_label.hide()  # Hide the artist initials label initially
-
-# Create song name and artist guess labels and input fields
-song_guess_label = QLabel(window)
-song_guess_label.setText("Guess Song Name:")
-song_guess_input = QLineEdit(window)
-song_guess_input.hide()  # Hide the song guess input field initially
-artist_guess_label = QLabel(window)
-artist_guess_label.setText("Guess Artist Name:")
-artist_guess_input = QLineEdit(window)
-artist_guess_input.hide()  # Hide the artist guess input field initially
-
-# Create guess button
-guess_button = QPushButton(window)
-guess_button.setText("Guess")
-guess_button.clicked.connect(guess)
-guess_button.setEnabled(False)  # Disable the guess button initially
-
-# Create score and lives labels
-score_label = QLabel(window)
-score_label.setText("Score: 0 points")
-score_label.hide()  # Hide the score label initially
-lives_label = QLabel(window)
-lives_label.setText("Lives: 3")
-lives_label.hide()  # Hide the lives label initially
-
-# Create layout for the window
+# Create layout for the widgets
 layout = QVBoxLayout()
 layout.addWidget(username_label)
 layout.addWidget(username_input)
 layout.addWidget(password_label)
 layout.addWidget(password_input)
 layout.addWidget(login_button)
-layout.addWidget(artist_initials_label)
-layout.addWidget(song_guess_label)
-layout.addWidget(song_guess_input)
-layout.addWidget(artist_guess_label)
-layout.addWidget(artist_guess_input)
-layout.addWidget(guess_button)
-layout.addWidget(score_label)
-layout.addWidget(lives_label)
 
+# Set the window layout
 window.setLayout(layout)
+
+# Show the GUI window
 window.show()
 
-# Create a media player for playing songs
+# Create the player for the songs
 song_player = QMediaPlayer()
 
-# Initialize variables
-selected_song = None
+# Create labels and input fields for song and artist guesses
+song_guess_label = QLabel(window)
+song_guess_label.setText("Guess the Song:")
+song_guess_input = QLineEdit(window)
+artist_guess_label = QLabel(window)
+artist_guess_label.setText("Guess the Artist:")
+artist_guess_input = QLineEdit(window)
+
+# Create guess button
+guess_button = QPushButton(window)
+guess_button.setText("Guess")
+guess_button.clicked.connect(guess)
+guess_button.setEnabled(False)
+
+# Create label for displaying artist initials and score
+artist_initials_label = QLabel(window)
+score_label = QLabel(window)
+lives_label = QLabel(window)
+
+# Set the layout for the guess widgets
+guess_layout = QVBoxLayout()
+guess_layout.addWidget(song_guess_label)
+guess_layout.addWidget(song_guess_input)
+guess_layout.addWidget(artist_guess_label)
+guess_layout.addWidget(artist_guess_input)
+guess_layout.addWidget(guess_button)
+guess_layout.addWidget(artist_initials_label)
+guess_layout.addWidget(score_label)
+guess_layout.addWidget(lives_label)
+
+# Connect the layout for guess widgets to the main layout
+layout.addLayout(guess_layout)
+
+# Create a timer for the song duration
+timer = QTimer()
+timer.setSingleShot(True)
+timer.timeout.connect(end_game)
+
+# Initialize player's score and lives
 player_score = 0
 player_lives = 3
+score_label.setText("Score: 0 points")
+lives_label.setText("Lives: 3")
 
-# Create a timer for song duration
-timer = QTimer()
-
-# Connect the timer's timeout signal to the guess function
-timer.timeout.connect(guess)
-
-# Start the GUI event loop
+# Start the application event loop
 sys.exit(app.exec_())
